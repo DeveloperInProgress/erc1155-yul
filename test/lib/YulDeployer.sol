@@ -8,8 +8,11 @@ contract YulDeployer is Test {
     ///@notice If deployment fails, an error will be thrown
     ///@param fileName - The file name of the Yul contract. For example, the file name for "Example.yul" is "Example"
     ///@return deployedAddress - The address that the contract was deployed to
-    function deployContract(string memory fileName) public returns (address) {
-        string memory bashCommand = string.concat('cast abi-encode "f(bytes)" $(solc --yul yul/', string.concat(fileName, ".yul --bin | tail -1)"));
+    function deployContract(string memory fileName, string memory uri) public returns (address) {
+        string memory bashCommand = string.concat(
+            'cast abi-encode "f(bytes)" $(solc --strict-assembly yul/',
+            string.concat(fileName, ".yul --bin | tail -1)")
+        );
 
         string[] memory inputs = new string[](3);
         inputs[0] = "bash";
@@ -17,6 +20,8 @@ contract YulDeployer is Test {
         inputs[2] = bashCommand;
 
         bytes memory bytecode = abi.decode(vm.ffi(inputs), (bytes));
+
+        bytecode = abi.encodePacked(bytecode, abi.encode(uri));
 
         ///@notice deploy the bytecode with the create instruction
         address deployedAddress;
